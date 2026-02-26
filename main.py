@@ -1,23 +1,22 @@
 import streamlit as st
 import google.generativeai as genai
 
-# 1. 安全檢查：確認 Secrets 中是否有金鑰
+# 1. 正規安全讀取模式 (請確保 Streamlit Secrets 裡有存好 GEMINI_API_KEY)
 if "GEMINI_API_KEY" not in st.secrets:
     st.error("⚠️ 尚未偵測到 API 金鑰！請在 Streamlit Secrets 中設定 GEMINI_API_KEY。")
     st.stop()
 
-# 2. 讀取金鑰並配置 (已確保字元校對為 P0B，非 POB)
+# 2. 配置金鑰 (校對為成功過的 P0B 格式)
 api_key = st.secrets["GEMINI_API_KEY"].strip()
 genai.configure(api_key=api_key)
 
-# 3. 核心修正：使用通用模型名稱 gemini-pro，徹底跳過 1.5 版本
-# 這是為了對接你的 2.5/3.0 帳號環境
-model = genai.GenerativeModel('gemini-pro')
+# 3. 核心修正：使用你之前唯一成功過的核心名稱 'gemini-2.5-flash'
+model = genai.GenerativeModel('gemini-2.5-flash')
 
-st.title("業務部 ERP 資料助理 (正規修正版)")
-st.caption("連線狀態：Secrets 環境變數模式 (Gemini-Pro)")
+st.title("業務部 ERP 資料助理 (正規安全版)")
+st.caption("連線狀態：成功環境對接模式 (Gemini 2.5 Flash)")
 
-# 你的 ERP 資料內容
+# 模擬 ERP 資料內容
 erp_context = """
 2026年營業目標：1億2千萬新台幣。
 主要推廣產品：AI 自動化排程系統、ERP 整合模組。
@@ -43,5 +42,5 @@ if prompt := st.chat_input("請問關於業務資料的問題？"):
             st.markdown(response.text)
             st.session_state.messages.append({"role": "assistant", "content": response.text})
         except Exception as e:
-            # 萬一還有問題，這裡會抓到最底層的錯誤代碼
+            # 如果失敗，會抓到最底層的錯誤
             st.error(f"連線失敗原因：{str(e)}")
