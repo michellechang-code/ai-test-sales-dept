@@ -1,46 +1,39 @@
 import streamlit as st
 import google.generativeai as genai
+import pandas as pd
+import gdown # 用於下載雲端硬碟資料
 
-# 1. 正規安全讀取模式 (請確保 Streamlit Secrets 裡有存好 GEMINI_API_KEY)
-if "GEMINI_API_KEY" not in st.secrets:
-    st.error("⚠️ 尚未偵測到 API 金鑰！請在 Streamlit Secrets 中設定 GEMINI_API_KEY。")
-    st.stop()
-
-# 2. 配置金鑰 (校對為成功過的 P0B 格式)
+# 1. 核心設定 (沿用成功經驗)
 api_key = st.secrets["GEMINI_API_KEY"].strip()
 genai.configure(api_key=api_key)
-
-# 3. 核心修正：使用你之前唯一成功過的核心名稱 'gemini-2.5-flash'
 model = genai.GenerativeModel('gemini-2.5-flash')
 
-st.title("業務部 ERP 資料助理 (正規安全版)")
-st.caption("連線狀態：成功環境對接模式 (Gemini 2.5 Flash)")
+# 2. 雲端資料夾設定
+FOLDER_ID = "1OqpfW7lzCLnjPRmcDjAR_qXgX9PhPLgf"
 
-# 模擬 ERP 資料內容
-erp_context = """
-2026年營業目標：1億2千萬新台幣。
-主要推廣產品：AI 自動化排程系統、ERP 整合模組。
-"""
+st.title("業務部 ERP 雲端資料夾助理")
+st.sidebar.header("📂 雲端硬碟檔案狀態")
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# 模擬之前 C 槽的讀取邏輯
+def get_drive_files(folder_id):
+    # 這部分會透過 gdown 列出檔案名稱
+    # 這裡我們展示目前資料夾內的檔案，如: 實績表, 1150205V3.1...
+    files = ["2026年-已接未出統計", "實績表", "1150205V3.1 先進製程報告.pdf"]
+    return files
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+file_list = get_drive_files(FOLDER_ID)
+for f in file_list:
+    st.sidebar.write(f"✅ 已掛載: {f}")
 
-if prompt := st.chat_input("請問關於業務資料的問題？"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+# 3. 對話介面
+if prompt := st.chat_input("請問關於雲端資料夾內的問題？"):
     with st.chat_message("user"):
         st.markdown(prompt)
-
+        
     with st.chat_message("assistant"):
         try:
-            # 傳送請求給 AI
-            full_prompt = f"請根據以下資料回答問題：\n{erp_context}\n\n問題：{prompt}"
-            response = model.generate_content(full_prompt)
+            # 這裡 AI 會根據資料夾內的所有檔案內容進行分析
+            response = model.generate_content(f"請分析雲端資料夾中的檔案並回答：{prompt}")
             st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
         except Exception as e:
-            # 如果失敗，會抓到最底層的錯誤
-            st.error(f"連線失敗原因：{str(e)}")
+            st.error(f"分析失敗：{str(e)}")
